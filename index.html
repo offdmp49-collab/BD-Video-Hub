@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BD Video Hub</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:#111;color:#fff;font-family:'Segoe UI',sans-serif;min-height:100vh}
+  
+  /* NAVBAR */
+  .navbar{background:#1a1a2e;border-bottom:2px solid #e50914;padding:0 12px;position:sticky;top:0;z-index:999}
+  .nav-inner{display:flex;align-items:center;justify-content:space-between;height:52px}
+  .logo{font-size:20px;font-weight:700;color:#e50914;letter-spacing:1px}
+  .logo span{color:#fff}
+  .nav-search{display:flex;align-items:center;background:#0d0d1a;border:1px solid #333;border-radius:20px;padding:5px 12px;gap:6px;flex:1;max-width:220px;margin:0 10px}
+  .nav-search input{background:none;border:none;color:#fff;font-size:13px;outline:none;width:100%}
+  .nav-search input::placeholder{color:#666}
+
+  /* POPUP NOTIFICATION */
+  .popup-notif{position:fixed;top:70px;left:50%;transform:translateX(-50%);background:#1e3a5f;border:1px solid #2a5a9f;border-radius:12px;padding:12px 14px;display:flex;align-items:center;gap:12px;z-index:9999;max-width:340px;width:90%;box-shadow:0 4px 20px rgba(0,0,0,0.5);animation:slideDown 0.4s ease}
+  @keyframes slideDown{from{top:40px;opacity:0}to{top:70px;opacity:1}}
+  .popup-notif img{width:52px;height:52px;border-radius:50%;border:2px solid #4a9eff;object-fit:cover}
+  .popup-notif-info{flex:1}
+  .popup-notif-name{font-weight:700;font-size:14px;color:#fff}
+  .popup-notif-text{font-size:12px;color:#ccc;margin-top:2px}
+  .popup-notif-btn{background:#fff;color:#1e3a5f;font-weight:700;font-size:13px;border:none;border-radius:20px;padding:7px 14px;cursor:pointer;white-space:nowrap}
+  .popup-close{position:absolute;top:6px;right:10px;background:none;border:none;color:#aaa;font-size:16px;cursor:pointer}
+
+  /* SECTION HEADER */
+  .section-header{background:#e50914;display:flex;align-items:center;gap:10px;padding:10px 14px;margin:14px 0 0}
+  .section-header .badge-num{background:#fff;color:#e50914;font-weight:700;font-size:12px;padding:2px 7px;border-radius:4px}
+  .section-header .section-title{font-weight:700;font-size:14px;letter-spacing:0.5px}
+
+  /* HORIZONTAL SCROLL CARDS */
+  .h-scroll{display:flex;gap:10px;overflow-x:auto;padding:10px 12px;scrollbar-width:none}
+  .h-scroll::-webkit-scrollbar{display:none}
+
+  .card{min-width:150px;max-width:150px;background:#1a1a2e;border-radius:8px;overflow:hidden;cursor:pointer;position:relative;flex-shrink:0}
+  .card-thumb{width:100%;height:100px;object-fit:cover;display:block;background:#222}
+  .card-thumb-placeholder{width:100%;height:100px;background:linear-gradient(135deg,#1a1a3e,#2a2a5e);display:flex;align-items:center;justify-content:center;font-size:28px}
+  .card-badges{position:absolute;top:5px;left:5px;display:flex;gap:3px}
+  .badge{font-size:10px;font-weight:700;padding:2px 5px;border-radius:3px}
+  .badge-hd{background:#2196F3;color:#fff}
+  .badge-4k{background:#9C27B0;color:#fff}
+  .badge-premium{background:#FF9800;color:#fff}
+  .badge-new{background:#4CAF50;color:#fff}
+  .play-icon{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:24px;opacity:0.9}
+  .card-title{padding:6px 8px;font-size:12px;color:#ddd;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+  /* TRENDING BIG CARD */
+  .trending-card{margin:0 12px 14px;background:#1a1a2e;border-radius:10px;overflow:hidden;cursor:pointer;position:relative}
+  .trending-thumb{width:100%;height:200px;object-fit:cover;background:linear-gradient(135deg,#1a1a3e,#2a2a5e);display:flex;align-items:center;justify-content:center;font-size:50px}
+  .trending-play{position:absolute;top:50%;left:50%;transform:translate(-50%,-65%);font-size:40px}
+  .trending-title{padding:10px 12px;font-size:15px;font-weight:500}
+
+  /* BOTTOM NAV */
+  .bottom-nav{position:fixed;bottom:0;left:0;right:0;background:#1a1a2e;border-top:1px solid #333;display:flex;justify-content:space-around;padding:8px 0 10px;z-index:998}
+  .bnav-item{display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;font-size:10px;color:#888;flex:1}
+  .bnav-item.active{color:#e50914}
+  .bnav-icon{font-size:22px}
+  .bnav-center{width:52px;height:52px;background:#e50914;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:24px;margin-top:-18px;border:3px solid #111}
+  .notif-dot{background:#e50914;color:#fff;font-size:9px;font-weight:700;padding:1px 4px;border-radius:8px;position:absolute;top:-4px;right:-4px}
+  .bnav-icon-wrap{position:relative;display:inline-block}
+
+  /* VIDEO PAGE */
+  #videoPage{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:#000;z-index:1000;overflow-y:auto}
+  .video-header{background:#1a1a2e;padding:10px 14px;display:flex;align-items:center;gap:10px;border-bottom:1px solid #333}
+  .back-btn{background:none;border:none;color:#fff;font-size:22px;cursor:pointer}
+  .video-title-h{font-size:15px;font-weight:600;flex:1}
+  .video-container{width:100%;aspect-ratio:16/9;background:#000;position:relative}
+  .video-container iframe{width:100%;height:100%;border:none}
+  .video-placeholder{width:100%;aspect-ratio:16/9;background:#1a1a2e;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:8px;color:#888}
+  .download-section{padding:14px}
+  .download-btn{width:100%;background:#e50914;color:#fff;border:none;border-radius:8px;padding:14px;font-size:16px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px}
+  .download-btn:active{background:#c00}
+
+  /* PAGE CONTENT */
+  .page-content{padding-bottom:70px}
+
+  /* MODAL */
+  .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:2000;align-items:center;justify-content:center}
+  .modal-overlay.show{display:flex}
+  .modal{background:#1a1a2e;border-radius:12px;padding:24px;max-width:320px;width:90%;text-align:center}
+  .modal h3{margin-bottom:12px;font-size:18px}
+  .modal p{color:#aaa;font-size:14px;margin-bottom:20px}
+  .modal-btn{background:#e50914;color:#fff;border:none;border-radius:8px;padding:12px 24px;font-size:15px;font-weight:700;cursor:pointer;width:100%}
+</style>
+</head>
+<body>
+
+<!-- POPUP NOTIFICATION -->
+<div class="popup-notif" id="popupNotif">
+  <button class="popup-close" onclick="document.getElementById('popupNotif').style.display='none'">✕</button>
+  <img src="https://i.pravatar.cc/100?img=47" alt="LINA">
+  <div class="popup-notif-info">
+    <div class="popup-notif-name">LINA</div>
+    <div class="popup-notif-text">আমি তোমার সমস্ত কল্পনা পূরণ করব!</div>
+  </div>
+  <button class="popup-notif-btn" onclick="handleAdClick('socialbar')">চ্যাট</button>
+</div>
+
+<!-- NAVBAR -->
+<div class="navbar">
+  <div class="nav-inner">
+    <div class="logo">BD<span>Video</span></div>
+    <div class="nav-search">
+      <span>🔍</span>
+      <input type="text" placeholder="খুঁজুন...">
+    </div>
+  </div>
+</div>
+
+<!-- MAIN PAGE -->
+<div class="page-content" id="mainPage">
+
+  <!-- TODAY NEW SECTION -->
+  <div class="section-header">
+    <span class="badge-num" id="todayCount">0</span>
+    <span class="section-title" id="todayDate">TODAY NEW</span>
+  </div>
+  <div class="h-scroll" id="todayCards"></div>
+
+  <!-- TRENDING SECTION -->
+  <div class="section-header" style="background:#c00">
+    <span>🔥</span>
+    <span class="section-title">TRENDING NOW</span>
+  </div>
+  <div id="trendingCards" style="padding:10px 12px 0"></div>
+
+</div>
+
+<!-- VIDEO PAGE -->
+<div id="videoPage">
+  <div class="video-header">
+    <button class="back-btn" onclick="closeVideo()">←</button>
+    <div class="video-title-h" id="videoPageTitle"></div>
+  </div>
+  <div id="videoEmbed"></div>
+  <div class="download-section">
+    <button class="download-btn" onclick="handleDownload()">
+      ⬇️ ডাউনলোড করুন
+    </button>
+  </div>
+</div>
+
+<!-- BOTTOM NAV -->
+<div class="bottom-nav">
+  <div class="bnav-item active" onclick="goHome()">
+    <span class="bnav-icon">🗂️</span>
+    <span>ফাইল</span>
+  </div>
+  <div class="bnav-item" onclick="goHome()">
+    <span class="bnav-icon">🎬</span>
+    <span>নতুন</span>
+  </div>
+  <div class="bnav-item" onclick="goHome()">
+    <div class="bnav-center">🏠</div>
+  </div>
+  <div class="bnav-item" onclick="goHome()">
+    <div class="bnav-icon-wrap">
+      <span class="bnav-icon">📸</span>
+      <span class="notif-dot" id="notifCount">0</span>
+    </div>
+    <span>ট্রেন্ড</span>
+  </div>
+  <div class="bnav-item" onclick="goHome()">
+    <span class="bnav-icon">🔍</span>
+    <span>খুঁজুন</span>
+  </div>
+</div>
+
+<script>
+// ========== AD CONFIG ==========
+const AD_CONFIG = {
+  popunderUrl: 'https://www.monetag.com/', // replace with your popunder URL
+  monetagDirectUrl: 'https://www.monetag.com/', // replace
+  adsterraDownloadUrl: 'https://www.adsterra.com/' // replace
+};
+
+// ========== CLICK TRACKING ==========
+let clickCount = 0;
+let currentPost = null;
+
+function handlePostClick(post) {
+  clickCount++;
+  currentPost = post;
+
+  if (clickCount === 1) {
+    // 1st click = Popunder
+    window.open(AD_CONFIG.popunderUrl, '_blank');
+  } else if (clickCount === 2) {
+    // 2nd click = Direct Link from post
+    if (post.directLink) {
+      window.open(post.directLink, '_blank');
+    } else {
+      window.open(AD_CONFIG.popunderUrl, '_blank');
+    }
+  } else if (clickCount === 3) {
+    // 3rd click = Monetag Direct
+    window.open(AD_CONFIG.monetagDirectUrl, '_blank');
+  } else {
+    // 4th+ click = Show video
+    clickCount = 0;
+    openVideoPage(post);
+  }
+}
+
+function handleDownload() {
+  window.open(AD_CONFIG.adsterraDownloadUrl, '_blank');
+}
+
+function handleAdClick(type) {
+  window.open(AD_CONFIG.popunderUrl, '_blank');
+}
+
+// ========== VIDEO PAGE ==========
+function openVideoPage(post) {
+  document.getElementById('videoPageTitle').textContent = post.title;
+  const embed = document.getElementById('videoEmbed');
+  if (post.videoEmbed) {
+    embed.innerHTML = `<div style="width:100%;aspect-ratio:16/9"><iframe src="${post.videoEmbed}" allowfullscreen allow="autoplay; encrypted-media" style="width:100%;height:100%;border:none"></iframe></div>`;
+  } else {
+    embed.innerHTML = `<div class="video-placeholder"><span style="font-size:48px">🎬</span><span>ভিডিও পাওয়া যায়নি</span></div>`;
+  }
+  document.getElementById('videoPage').style.display = 'block';
+  document.body.style.overflow = 'hidden';
+}
+
+function closeVideo() {
+  document.getElementById('videoPage').style.display = 'none';
+  document.body.style.overflow = '';
+  clickCount = 0;
+}
+
+function goHome() {
+  document.getElementById('videoPage').style.display = 'none';
+  document.body.style.overflow = '';
+  clickCount = 0;
+}
+
+// ========== LOAD POSTS ==========
+function loadPosts() {
+  const raw = localStorage.getItem('bdvh_posts');
+  return raw ? JSON.parse(raw) : [];
+}
+
+function formatDate(dateStr) {
+  const d = new Date(dateStr);
+  const day = String(d.getDate()).padStart(2,'0');
+  const mon = d.toLocaleString('en',{month:'short'}).toUpperCase();
+  return `${day} ${mon} • TODAY NEW`;
+}
+
+function renderPosts() {
+  const posts = loadPosts().filter(p => p.active !== false);
+  const today = new Date().toDateString();
+
+  // Update today's date label
+  const todayPosts = posts.filter(p => new Date(p.date).toDateString() === today);
+  document.getElementById('todayCount').textContent = todayPosts.length || posts.length;
+  const d = new Date();
+  document.getElementById('todayDate').textContent = `${String(d.getDate()).padStart(2,'0')} ${d.toLocaleString('en',{month:'short'}).toUpperCase()} • TODAY NEW`;
+
+  // Notification count
+  document.getElementById('notifCount').textContent = posts.length > 99 ? '99+' : posts.length;
+
+  // TODAY CARDS (horizontal scroll)
+  const todayEl = document.getElementById('todayCards');
+  const trending = document.getElementById('trendingCards');
+  todayEl.innerHTML = '';
+  trending.innerHTML = '';
+
+  if (posts.length === 0) {
+    todayEl.innerHTML = '<div style="padding:20px;color:#666;font-size:13px">কোনো পোস্ট নেই</div>';
+    return;
+  }
+
+  posts.forEach((post, i) => {
+    const badgesHtml = [
+      post.badge ? `<span class="badge badge-${post.badge.toLowerCase()}">${post.badge}</span>` : '',
+      post.premiumBadge ? '<span class="badge badge-premium">PREMIUM</span>' : '',
+      post.newBadge ? '<span class="badge badge-new">NEW</span>' : ''
+    ].join('');
+
+    const thumbHtml = post.thumbnail
+      ? `<img class="card-thumb" src="${post.thumbnail}" alt="${post.title}" onerror="this.style.display='none'">`
+      : `<div class="card-thumb-placeholder">🎬</div>`;
+
+    if (i < 6) {
+      // Small horizontal card
+      const card = document.createElement('div');
+      card.className = 'card';
+      card.innerHTML = `
+        ${thumbHtml}
+        <div class="card-badges">${badgesHtml}</div>
+        <div class="play-icon">▶️</div>
+        <div class="card-title">${post.title}</div>
+      `;
+      card.onclick = () => handlePostClick(post);
+      todayEl.appendChild(card);
+    } else {
+      // Big trending card
+      const card = document.createElement('div');
+      card.className = 'trending-card';
+      card.innerHTML = `
+        ${post.thumbnail
+          ? `<img src="${post.thumbnail}" style="width:100%;height:200px;object-fit:cover" onerror="this.outerHTML='<div class=trending-thumb>🎬</div>'">`
+          : '<div class="trending-thumb">🎬</div>'}
+        <div class="card-badges" style="position:absolute;top:10px;left:10px;display:flex;gap:4px">${badgesHtml}</div>
+        <div class="trending-play">▶️</div>
+        <div class="trending-title">${post.title}</div>
+      `;
+      card.onclick = () => handlePostClick(post);
+      trending.appendChild(card);
+    }
+  });
+}
+
+// ========== INIT ==========
+// Monetag Popunder script placeholder
+// Replace the comment below with your actual Monetag popunder script tag
+// <script src="https://...monetag...popunder..."></script>
+
+// Adsterra socialbar placeholder
+// Replace with actual socialbar script from Adsterra
+
+// Set today's popup close timer
+setTimeout(() => {
+  const p = document.getElementById('popupNotif');
+  if(p) p.style.animation = 'none';
+}, 8000);
+
+renderPosts();
+
+// Listen for storage changes (when admin adds posts)
+window.addEventListener('storage', renderPosts);
+</script>
+</body>
+</html>

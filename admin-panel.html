@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Panel - BD Video Hub</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:#0d0d1a;color:#fff;font-family:'Segoe UI',sans-serif;min-height:100vh}
+
+  /* LOGIN */
+  #loginScreen{position:fixed;inset:0;background:#0d0d1a;display:flex;align-items:center;justify-content:center;z-index:9999}
+  .login-box{background:#1a1a2e;border-radius:14px;padding:32px 28px;width:90%;max-width:340px;text-align:center}
+  .login-logo{font-size:28px;font-weight:800;color:#e50914;margin-bottom:4px}
+  .login-sub{font-size:13px;color:#888;margin-bottom:24px}
+  .login-input{width:100%;background:#0d1830;border:1px solid #2a4a7a;border-radius:8px;padding:12px 14px;color:#fff;font-size:14px;margin-bottom:12px;outline:none}
+  .login-input:focus{border-color:#4a9eff}
+  .login-btn{width:100%;background:#e50914;color:#fff;border:none;border-radius:8px;padding:13px;font-size:15px;font-weight:700;cursor:pointer;margin-top:4px}
+  .login-btn:hover{background:#c00}
+  .login-err{color:#ff5555;font-size:13px;margin-top:8px;display:none}
+
+  /* ADMIN LAYOUT */
+  #adminApp{display:none}
+  .top-nav{background:#1a1a2e;border-bottom:2px solid #e50914;padding:0 14px;height:52px;display:flex;align-items:center;gap:4px;overflow-x:auto;position:sticky;top:0;z-index:100}
+  .top-nav::-webkit-scrollbar{display:none}
+  .nav-tab{padding:8px 12px;font-size:13px;color:#aaa;cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;display:flex;align-items:center;gap:5px}
+  .nav-tab.active{color:#fff;border-bottom-color:#e50914}
+  .nav-tab:hover{color:#ddd}
+  .nav-admin{margin-left:auto;display:flex;align-items:center;gap:8px}
+  .admin-avatar{width:30px;height:30px;background:#e50914;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px}
+  .logout-btn{background:none;border:1px solid #555;color:#aaa;border-radius:6px;padding:4px 10px;font-size:12px;cursor:pointer}
+  .logout-btn:hover{border-color:#e50914;color:#e50914}
+
+  /* PAGES */
+  .page{display:none;padding:16px 14px 80px}
+  .page.active{display:block}
+
+  /* DASHBOARD STATS */
+  .stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}
+  .stat-card{background:#1a1a2e;border-radius:10px;padding:16px 14px}
+  .stat-label{font-size:11px;color:#888;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px}
+  .stat-val{font-size:28px;font-weight:700}
+  .stat-val.red{color:#e50914}
+  .stat-val.green{color:#4CAF50}
+  .stat-val.yellow{color:#FF9800}
+  .stat-val.teal{color:#00BCD4}
+  .stat-sub{font-size:11px;color:#666;margin-top:4px}
+
+  /* RECENT POSTS TABLE */
+  .recent-box{background:#1a1a2e;border-radius:10px;padding:14px}
+  .recent-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+  .recent-title{font-size:14px;font-weight:600}
+  .see-all{font-size:12px;color:#4a9eff;cursor:pointer;background:none;border:none;color:#4a9eff}
+  .table-head{display:grid;grid-template-columns:60px 1fr 80px 60px 70px;gap:6px;font-size:11px;color:#666;padding:6px 0;border-bottom:1px solid #2a2a4a;text-transform:uppercase}
+  .table-row{display:grid;grid-template-columns:60px 1fr 80px 60px 70px;gap:6px;font-size:12px;padding:8px 0;border-bottom:1px solid #1f1f35;align-items:center}
+  .table-thumb{width:52px;height:36px;object-fit:cover;border-radius:4px;background:#0d1830}
+  .table-title{font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .status-badge{font-size:10px;padding:2px 7px;border-radius:10px;font-weight:600}
+  .status-active{background:rgba(76,175,80,0.2);color:#4CAF50}
+  .status-inactive{background:rgba(229,9,20,0.2);color:#e50914}
+  .del-btn{background:rgba(229,9,20,0.15);border:1px solid rgba(229,9,20,0.4);color:#e50914;border-radius:5px;padding:3px 8px;font-size:11px;cursor:pointer}
+  .del-btn:hover{background:rgba(229,9,20,0.3)}
+
+  /* FORM */
+  .form-box{background:#1a1a2e;border-radius:12px;padding:18px}
+  .form-title{font-size:16px;font-weight:700;margin-bottom:18px;display:flex;align-items:center;gap:8px}
+  .form-label{font-size:13px;color:#bbb;margin-bottom:6px;display:block}
+  .form-input{width:100%;background:#0d1830;border:1px solid #2a4a7a;border-radius:8px;padding:11px 13px;color:#fff;font-size:14px;margin-bottom:14px;outline:none}
+  .form-input:focus{border-color:#4a9eff}
+  .form-select{width:100%;background:#0d1830;border:1px solid #2a4a7a;border-radius:8px;padding:11px 13px;color:#fff;font-size:14px;margin-bottom:14px;outline:none;appearance:none;-webkit-appearance:none}
+  .form-select option{background:#0d1830}
+  .select-wrap{position:relative;margin-bottom:0}
+  .select-arrow{position:absolute;right:12px;top:50%;transform:translateY(-50%);pointer-events:none;color:#aaa}
+  
+  .drop-zone{border:2px dashed #2a4a7a;border-radius:10px;padding:28px;text-align:center;cursor:pointer;margin-bottom:14px;transition:border-color 0.2s}
+  .drop-zone:hover,.drop-zone.drag{border-color:#4a9eff}
+  .drop-icon{font-size:36px;margin-bottom:8px}
+  .drop-label{font-size:13px;color:#888}
+  .drop-label span{color:#e50914;font-weight:600;cursor:pointer}
+  .drop-hint{font-size:11px;color:#555;margin-top:4px}
+  .preview-img{max-width:100%;max-height:120px;border-radius:6px;display:none;margin-top:8px}
+
+  .toggle-row{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+  .toggle-label{font-size:13px;color:#ccc}
+  .toggle{position:relative;width:44px;height:24px;cursor:pointer}
+  .toggle input{opacity:0;width:0;height:0}
+  .toggle-slider{position:absolute;inset:0;background:#333;border-radius:24px;transition:0.3s}
+  .toggle-slider:before{content:'';position:absolute;width:18px;height:18px;left:3px;top:3px;background:#fff;border-radius:50%;transition:0.3s}
+  .toggle input:checked + .toggle-slider{background:#4CAF50}
+  .toggle input:checked + .toggle-slider:before{transform:translateX(20px)}
+
+  .btn-row{display:flex;gap:10px;margin-top:4px}
+  .btn-submit{background:#e50914;color:#fff;border:none;border-radius:8px;padding:13px 20px;font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;flex:1;justify-content:center}
+  .btn-reset{background:#1f1f35;color:#aaa;border:1px solid #333;border-radius:8px;padding:13px 16px;font-size:14px;cursor:pointer;display:flex;align-items:center;gap:5px}
+  .btn-submit:hover{background:#c00}
+
+  /* POSTS LIST */
+  .post-card{background:#1a1a2e;border-radius:10px;padding:12px;margin-bottom:10px;display:flex;gap:10px;align-items:flex-start}
+  .post-card-thumb{width:72px;height:50px;border-radius:6px;object-fit:cover;background:#0d1830;flex-shrink:0;font-size:24px;display:flex;align-items:center;justify-content:center}
+  .post-card-info{flex:1;min-width:0}
+  .post-card-title{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .post-card-meta{font-size:11px;color:#666;margin-top:3px}
+  .post-card-actions{display:flex;gap:6px;margin-top:8px}
+  .btn-edit{background:rgba(74,158,255,0.15);border:1px solid rgba(74,158,255,0.4);color:#4a9eff;border-radius:5px;padding:4px 10px;font-size:11px;cursor:pointer}
+  .btn-del{background:rgba(229,9,20,0.15);border:1px solid rgba(229,9,20,0.4);color:#e50914;border-radius:5px;padding:4px 10px;font-size:11px;cursor:pointer}
+
+  /* SETTINGS */
+  .settings-box{background:#1a1a2e;border-radius:12px;padding:18px;margin-bottom:14px}
+  .settings-title{font-size:14px;font-weight:700;margin-bottom:14px;color:#e50914}
+  .settings-label{font-size:12px;color:#888;margin-bottom:5px;display:block}
+
+  /* TOAST */
+  .toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#4CAF50;color:#fff;padding:10px 20px;border-radius:8px;font-size:13px;font-weight:600;z-index:9999;opacity:0;transition:opacity 0.3s;pointer-events:none}
+  .toast.show{opacity:1}
+  .toast.error{background:#e50914}
+
+  /* CONFIRM MODAL */
+  .confirm-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:8888;align-items:center;justify-content:center}
+  .confirm-overlay.show{display:flex}
+  .confirm-box{background:#1a1a2e;border-radius:12px;padding:24px;max-width:300px;width:90%;text-align:center}
+  .confirm-box h3{margin-bottom:10px;font-size:17px}
+  .confirm-box p{color:#aaa;font-size:13px;margin-bottom:20px}
+  .confirm-btns{display:flex;gap:10px}
+  .confirm-yes{background:#e50914;color:#fff;border:none;border-radius:8px;padding:11px;flex:1;cursor:pointer;font-weight:700}
+  .confirm-no{background:#2a2a4a;color:#ccc;border:none;border-radius:8px;padding:11px;flex:1;cursor:pointer}
+</style>
+</head>
+<body>
+
+<!-- LOGIN SCREEN -->
+<div id="loginScreen">
+  <div class="login-box">
+    <div class="login-logo">BD Video Hub</div>
+    <div class="login-sub">অ্যাডমিন প্যানেল</div>
+    <input class="login-input" type="text" id="loginUser" placeholder="ইউজারনেম" autocomplete="off">
+    <input class="login-input" type="password" id="loginPass" placeholder="পাসওয়ার্ড" autocomplete="off">
+    <button class="login-btn" onclick="doLogin()">লগইন করুন</button>
+    <div class="login-err" id="loginErr">ভুল ইউজারনেম বা পাসওয়ার্ড!</div>
+  </div>
+</div>
+
+<!-- ADMIN APP -->
+<div id="adminApp">
+  <!-- TOP NAV -->
+  <div class="top-nav">
+    <div class="nav-tab active" data-page="dashboard" onclick="switchPage('dashboard',this)">📊 Dashboard</div>
+    <div class="nav-tab" data-page="posts" onclick="switchPage('posts',this)">📄 পোস্ট</div>
+    <div class="nav-tab" data-page="newpost" onclick="switchPage('newpost',this)">➕ নতুন</div>
+    <div class="nav-tab" data-page="settings" onclick="switchPage('settings',this)">⚙️ সেটিংস</div>
+    <div class="nav-admin">
+      <div class="admin-avatar">A</div>
+      <button class="logout-btn" onclick="doLogout()">লগআউট</button>
+    </div>
+  </div>
+
+  <!-- DASHBOARD -->
+  <div class="page active" id="page-dashboard">
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-label">মোট পোস্ট</div>
+        <div class="stat-val red" id="statTotal">0</div>
+        <div class="stat-sub">সব সেকশন মিলিয়ে</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">ACTIVE পোস্ট</div>
+        <div class="stat-val green" id="statActive">0</div>
+        <div class="stat-sub">দেখানো হচ্ছে</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">MOST POPULAR</div>
+        <div class="stat-val yellow" id="statPopular">0</div>
+        <div class="stat-sub">পোস্ট আছে</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">TRENDING NOW</div>
+        <div class="stat-val teal" id="statTrending">0</div>
+        <div class="stat-sub">পোস্ট আছে</div>
+      </div>
+    </div>
+
+    <div class="recent-box">
+      <div class="recent-header">
+        <div class="recent-title">🕒 সাম্প্রতিক পোস্ট</div>
+        <button class="see-all" onclick="switchPage('posts',document.querySelector('[data-page=posts]'))">সব দেখুন</button>
+      </div>
+      <div class="table-head">
+        <span>থাম্বনেইল</span><span>টাইটেল</span><span>সেকশন</span><span>ভিউ</span><span>স্ট্যাটাস</span>
+      </div>
+      <div id="recentPostsTable">
+        <div style="padding:16px;text-align:center;color:#555;font-size:13px">লোড হচ্ছে...</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- POSTS LIST -->
+  <div class="page" id="page-posts">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+      <div style="font-size:16px;font-weight:700">সব পোস্ট</div>
+      <button class="btn-submit" style="flex:none;padding:8px 14px;font-size:13px" onclick="switchPage('newpost',document.querySelector('[data-page=newpost]'))">➕ নতুন পোস্ট</button>
+    </div>
+    <div id="postsListEl"></div>
+  </div>
+
+  <!-- NEW POST -->
+  <div class="page" id="page-newpost">
+    <div class="form-box">
+      <div class="form-title">➕ নতুন পোস্ট যোগ করুন</div>
+      <input type="hidden" id="editPostId">
+
+      <label class="form-label">টাইটেল *</label>
+      <input class="form-input" type="text" id="postTitle" placeholder="পোস্টের টাইটেল বাংলায় লিখুন...">
+
+      <label class="form-label">থাম্বনেইল আপলোড করুন *</label>
+      <div class="drop-zone" id="dropZone" onclick="document.getElementById('thumbFile').click()">
+        <div class="drop-icon">📸</div>
+        <div class="drop-label"><span>ক্লিক করুন</span> অথবা ড্র্যাগ করুন</div>
+        <div class="drop-hint">JPG, PNG, GIF, WEBP (সর্বোচ্চ 10MB)</div>
+        <img id="previewImg" class="preview-img">
+      </div>
+      <input type="file" id="thumbFile" accept="image/*" style="display:none" onchange="handleThumb(this)">
+      <input class="form-input" type="text" id="thumbUrl" placeholder="অথবা থাম্বনেইল URL পেস্ট করুন...">
+
+      <label class="form-label">ভিডিও Embed URL (iframe src)</label>
+      <input class="form-input" type="text" id="videoEmbed" placeholder="https://www.youtube.com/embed/... অথবা যেকোনো embed লিংক">
+
+      <label class="form-label">টেলিগ্রাম/এক্সটার্নাল লিংক (Direct Link - ২য় ক্লিকে খুলবে) *</label>
+      <input class="form-input" type="text" id="directLink" placeholder="https://t.me/... অথবা যেকোনো লিংক">
+
+      <label class="form-label">Monetag Direct Link (৩য় ক্লিকে খুলবে)</label>
+      <input class="form-input" type="text" id="monetagLink" placeholder="https://... Monetag direct link">
+
+      <label class="form-label">সেকশন *</label>
+      <div class="select-wrap" style="margin-bottom:14px">
+        <select class="form-select" id="postSection">
+          <option value="">সেকশন বেছে নিন</option>
+          <option value="today">Today New</option>
+          <option value="trending">Trending Now</option>
+          <option value="popular">Most Popular</option>
+        </select>
+        <span class="select-arrow">▾</span>
+      </div>
+
+      <label class="form-label">BADGE</label>
+      <div class="select-wrap" style="margin-bottom:14px">
+        <select class="form-select" id="postBadge">
+          <option value="HD">HD</option>
+          <option value="4K">4K</option>
+          <option value="FHD">FHD</option>
+        </select>
+        <span class="select-arrow">▾</span>
+      </div>
+
+      <label class="form-label">ক্রম (ORDER)</label>
+      <input class="form-input" type="number" id="postOrder" value="0">
+
+      <label class="form-label">অপশন</label>
+      <div class="toggle-row">
+        <label class="toggle"><input type="checkbox" id="premiumBadge" checked><span class="toggle-slider"></span></label>
+        <span class="toggle-label">PREMIUM Badge দেখাবে</span>
+      </div>
+      <div class="toggle-row">
+        <label class="toggle"><input type="checkbox" id="newBadge"><span class="toggle-slider"></span></label>
+        <span class="toggle-label">NEW Badge দেখাবে</span>
+      </div>
+      <div class="toggle-row">
+        <label class="toggle"><input type="checkbox" id="postActive" checked><span class="toggle-slider"></span></label>
+        <span class="toggle-label">Active (দেখানো হবে)</span>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn-submit" onclick="savePost()">✅ পোস্ট সেভ করুন</button>
+        <button class="btn-reset" onclick="resetForm()">🔄 রিসেট</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SETTINGS -->
+  <div class="page" id="page-settings">
+    <div class="settings-box">
+      <div class="settings-title">🔐 পাসওয়ার্ড পরিবর্তন</div>
+      <label class="settings-label">বর্তমান পাসওয়ার্ড</label>
+      <input class="form-input" type="password" id="currPass" placeholder="বর্তমান পাসওয়ার্ড">
+      <label class="settings-label">নতুন পাসওয়ার্ড</label>
+      <input class="form-input" type="password" id="newPass" placeholder="নতুন পাসওয়ার্ড">
+      <label class="settings-label">নতুন পাসওয়ার্ড নিশ্চিত করুন</label>
+      <input class="form-input" type="password" id="confirmPass" placeholder="আবার লিখুন">
+      <button class="btn-submit" onclick="changePassword()">🔐 পাসওয়ার্ড আপডেট করুন</button>
+    </div>
+
+    <div class="settings-box">
+      <div class="settings-title">📢 Ad সেটিংস</div>
+      <label class="settings-label">Monetag Popunder URL (১ম ক্লিক)</label>
+      <input class="form-input" type="text" id="setPopunder" placeholder="https://monetag.com/...">
+      <label class="settings-label">Monetag Direct Link URL (৩য় ক্লিক)</label>
+      <input class="form-input" type="text" id="setMonetagDirect" placeholder="https://monetag.com/...">
+      <label class="settings-label">Adsterra Download Ad URL (ডাউনলোড বাটনে)</label>
+      <input class="form-input" type="text" id="setAdsterraDown" placeholder="https://adsterra.com/...">
+      <label class="settings-label">Monetag Popunder Script (পুরো স্ক্রিপ্ট কোড)</label>
+      <textarea class="form-input" id="setPopunderScript" rows="3" placeholder="<script src=...></script>"></textarea>
+      <label class="settings-label">Adsterra Socialbar Script (পুরো স্ক্রিপ্ট কোড)</label>
+      <textarea class="form-input" id="setAdsterraSocial" rows="3" placeholder="<script src=...></script>"></textarea>
+      <button class="btn-submit" onclick="saveAdSettings()">💾 Ad সেটিংস সেভ করুন</button>
+    </div>
+
+    <div class="settings-box">
+      <div class="settings-title">⚠️ ডেটা ম্যানেজমেন্ট</div>
+      <button class="btn-reset" style="width:100%;background:rgba(229,9,20,0.1);border-color:rgba(229,9,20,0.3);color:#e50914" onclick="exportData()">📤 সব পোস্ট Export (JSON)</button>
+    </div>
+  </div>
+
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<!-- CONFIRM MODAL -->
+<div class="confirm-overlay" id="confirmOverlay">
+  <div class="confirm-box">
+    <h3>নিশ্চিত করুন</h3>
+    <p id="confirmMsg">এই পোস্ট ডিলেট করবেন?</p>
+    <div class="confirm-btns">
+      <button class="confirm-yes" id="confirmYes">হ্যাঁ, ডিলেট করুন</button>
+      <button class="confirm-no" onclick="closeConfirm()">বাতিল</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ========== AUTH ==========
+const DEFAULT_USER = 'admin';
+const DEFAULT_PASS_KEY = 'bdvh_password';
+
+function getPassword() {
+  return localStorage.getItem(DEFAULT_PASS_KEY) || 'admin123';
+}
+
+function doLogin() {
+  const u = document.getElementById('loginUser').value.trim();
+  const p = document.getElementById('loginPass').value.trim();
+  const err = document.getElementById('loginErr');
+  if (u === DEFAULT_USER && p === getPassword()) {
+    sessionStorage.setItem('bdvh_auth', '1');
+    document.getElementById('loginScreen').style.display = 'none';
+    document.getElementById('adminApp').style.display = 'block';
+    refreshAll();
+    loadAdSettings();
+    err.style.display = 'none';
+  } else {
+    err.style.display = 'block';
+  }
+}
+
+function doLogout() {
+  sessionStorage.removeItem('bdvh_auth');
+  location.reload();
+}
+
+// Check session
+if (sessionStorage.getItem('bdvh_auth') === '1') {
+  document.getElementById('loginScreen').style.display = 'none';
+  document.getElementById('adminApp').style.display = 'block';
+}
+
+// ========== PAGE SWITCHING ==========
+function switchPage(name, el) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  if (el) el.classList.add('active');
+  if (name === 'dashboard') refreshDashboard();
+  if (name === 'posts') renderPostsList();
+  if (name === 'settings') loadAdSettings();
+}
+
+// ========== POST STORAGE ==========
+function getPosts() {
+  const raw = localStorage.getItem('bdvh_posts');
+  return raw ? JSON.parse(raw) : [];
+}
+function savePosts(posts) {
+  localStorage.setItem('bdvh_posts', JSON.stringify(posts));
+  // Trigger update on main site
+  window.dispatchEvent(new Event('storage'));
+}
+
+// ========== THUMBNAIL ==========
+function handleThumb(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const img = document.getElementById('previewImg');
+    img.src = e.target.result;
+    img.style.display = 'block';
+    document.getElementById('thumbUrl').value = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+// Drag & drop
+const dz = document.getElementById('dropZone');
+dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('drag'); });
+dz.addEventListener('dragleave', () => dz.classList.remove('drag'));
+dz.addEventListener('drop', e => {
+  e.preventDefault();
+  dz.classList.remove('drag');
+  const file = e.dataTransfer.files[0];
+  if (file && file.type.startsWith('image/')) {
+    const reader = new FileReader();
+    reader.onload = ev => {
+      document.getElementById('previewImg').src = ev.target.result;
+      document.getElementById('previewImg').style.display = 'block';
+      document.getElementById('thumbUrl').value = ev.target.result;
+    };
+    reader.readAsDataURL(file);
+  }
+});
+
+// ========== SAVE POST ==========
+function savePost() {
+  const title = document.getElementById('postTitle').value.trim();
+  const thumb = document.getElementById('thumbUrl').value.trim();
+  const videoEmbed = document.getElementById('videoEmbed').value.trim();
+  const directLink = document.getElementById('directLink').value.trim();
+  const monetagLink = document.getElementById('monetagLink').value.trim();
+  const section = document.getElementById('postSection').value;
+  const badge = document.getElementById('postBadge').value;
+  const order = parseInt(document.getElementById('postOrder').value) || 0;
+  const premiumBadge = document.getElementById('premiumBadge').checked;
+  const newBadge = document.getElementById('newBadge').checked;
+  const active = document.getElementById('postActive').checked;
+  const editId = document.getElementById('editPostId').value;
+
+  if (!title) { showToast('টাইটেল দিন!', true); return; }
+
+  const posts = getPosts();
+  const post = {
+    id: editId || Date.now().toString(),
+    title, thumbnail: thumb, videoEmbed, directLink, monetagLink,
+    section, badge, order, premiumBadge, newBadge, active,
+    date: editId ? (posts.find(p => p.id === editId)?.date || new Date().toISOString()) : new Date().toISOString(),
+    views: editId ? (posts.find(p => p.id === editId)?.views || 0) : 0
+  };
+
+  if (editId) {
+    const idx = posts.findIndex(p => p.id === editId);
+    if (idx > -1) posts[idx] = post;
+  } else {
+    posts.unshift(post);
+  }
+
+  savePosts(posts);
+  showToast(editId ? 'পোস্ট আপডেট হয়েছে ✅' : 'পোস্ট সেভ হয়েছে ✅');
+  resetForm();
+  refreshDashboard();
+}
+
+function resetForm() {
+  document.getElementById('postTitle').value = '';
+  document.getElementById('thumbUrl').value = '';
+  document.getElementById('videoEmbed').value = '';
+  document.getElementById('directLink').value = '';
+  document.getElementById('monetagLink').value = '';
+  document.getElementById('postSection').value = '';
+  document.getElementById('postBadge').value = 'HD';
+  document.getElementById('postOrder').value = '0';
+  document.getElementById('premiumBadge').checked = true;
+  document.getElementById('newBadge').checked = false;
+  document.getElementById('postActive').checked = true;
+  document.getElementById('editPostId').value = '';
+  document.getElementById('previewImg').src = '';
+  document.getElementById('previewImg').style.display = 'none';
+}
+
+// ========== EDIT POST ==========
+function editPost(id) {
+  const posts = getPosts();
+  const post = posts.find(p => p.id === id);
+  if (!post) return;
+  document.getElementById('editPostId').value = post.id;
+  document.getElementById('postTitle').value = post.title || '';
+  document.getElementById('thumbUrl').value = post.thumbnail || '';
+  document.getElementById('videoEmbed').value = post.videoEmbed || '';
+  document.getElementById('directLink').value = post.directLink || '';
+  document.getElementById('monetagLink').value = post.monetagLink || '';
+  document.getElementById('postSection').value = post.section || '';
+  document.getElementById('postBadge').value = post.badge || 'HD';
+  document.getElementById('postOrder').value = post.order || 0;
+  document.getElementById('premiumBadge').checked = !!post.premiumBadge;
+  document.getElementById('newBadge').checked = !!post.newBadge;
+  document.getElementById('postActive').checked = post.active !== false;
+  if (post.thumbnail) {
+    document.getElementById('previewImg').src = post.thumbnail;
+    document.getElementById('previewImg').style.display = 'block';
+  }
+  switchPage('newpost', document.querySelector('[data-page=newpost]'));
+}
+
+// ========== DELETE POST ==========
+let pendingDeleteId = null;
+function deletePost(id) {
+  pendingDeleteId = id;
+  document.getElementById('confirmOverlay').classList.add('show');
+  document.getElementById('confirmYes').onclick = () => {
+    const posts = getPosts().filter(p => p.id !== id);
+    savePosts(posts);
+    closeConfirm();
+    renderPostsList();
+    refreshDashboard();
+    showToast('পোস্ট ডিলেট হয়েছে');
+  };
+}
+function closeConfirm() {
+  document.getElementById('confirmOverlay').classList.remove('show');
+}
+
+// ========== DASHBOARD ==========
+function refreshDashboard() {
+  const posts = getPosts();
+  document.getElementById('statTotal').textContent = posts.length;
+  document.getElementById('statActive').textContent = posts.filter(p => p.active !== false).length;
+  document.getElementById('statPopular').textContent = posts.filter(p => p.section === 'popular').length;
+  document.getElementById('statTrending').textContent = posts.filter(p => p.section === 'trending').length;
+
+  const tbody = document.getElementById('recentPostsTable');
+  if (posts.length === 0) {
+    tbody.innerHTML = '<div style="padding:16px;text-align:center;color:#555;font-size:13px">কোনো পোস্ট নেই</div>';
+    return;
+  }
+  tbody.innerHTML = posts.slice(0, 5).map(p => `
+    <div class="table-row">
+      <div>${p.thumbnail ? `<img class="table-thumb" src="${p.thumbnail}" onerror="this.style.display='none'">` : '<div class="table-thumb" style="display:flex;align-items:center;justify-content:center">🎬</div>'}</div>
+      <div class="table-title">${p.title}</div>
+      <div><span style="font-size:11px;color:#888">${p.section || '-'}</span></div>
+      <div style="font-size:12px">${p.views || 0}</div>
+      <div><span class="status-badge ${p.active !== false ? 'status-active' : 'status-inactive'}">${p.active !== false ? 'Active' : 'Off'}</span></div>
+    </div>
+  `).join('');
+}
+
+// ========== POSTS LIST ==========
+function renderPostsList() {
+  const posts = getPosts();
+  const el = document.getElementById('postsListEl');
+  if (posts.length === 0) {
+    el.innerHTML = '<div style="padding:30px;text-align:center;color:#555">কোনো পোস্ট নেই। নতুন পোস্ট যোগ করুন।</div>';
+    return;
+  }
+  el.innerHTML = posts.map(p => `
+    <div class="post-card">
+      ${p.thumbnail
+        ? `<img class="post-card-thumb" src="${p.thumbnail}" onerror="this.outerHTML='<div class=post-card-thumb>🎬</div>'">`
+        : '<div class="post-card-thumb">🎬</div>'}
+      <div class="post-card-info">
+        <div class="post-card-title">${p.title}</div>
+        <div class="post-card-meta">${new Date(p.date).toLocaleDateString('bn-BD')} • ${p.section || 'no section'} • ${p.active !== false ? '✅ Active' : '❌ Off'}</div>
+        <div class="post-card-actions">
+          <button class="btn-edit" onclick="editPost('${p.id}')">✏️ এডিট</button>
+          <button class="btn-del" onclick="deletePost('${p.id}')">🗑️ ডিলেট</button>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+// ========== CHANGE PASSWORD ==========
+function changePassword() {
+  const curr = document.getElementById('currPass').value;
+  const newP = document.getElementById('newPass').value;
+  const conf = document.getElementById('confirmPass').value;
+  if (curr !== getPassword()) { showToast('বর্তমান পাসওয়ার্ড ভুল!', true); return; }
+  if (!newP) { showToast('নতুন পাসওয়ার্ড দিন!', true); return; }
+  if (newP !== conf) { showToast('পাসওয়ার্ড মিলছে না!', true); return; }
+  localStorage.setItem(DEFAULT_PASS_KEY, newP);
+  document.getElementById('currPass').value = '';
+  document.getElementById('newPass').value = '';
+  document.getElementById('confirmPass').value = '';
+  showToast('পাসওয়ার্ড পরিবর্তন হয়েছে ✅');
+}
+
+// ========== AD SETTINGS ==========
+function saveAdSettings() {
+  const cfg = {
+    popunderUrl: document.getElementById('setPopunder').value.trim(),
+    monetagDirectUrl: document.getElementById('setMonetagDirect').value.trim(),
+    adsterraDownloadUrl: document.getElementById('setAdsterraDown').value.trim(),
+    popunderScript: document.getElementById('setPopunderScript').value.trim(),
+    socialbarScript: document.getElementById('setAdsterraSocial').value.trim()
+  };
+  localStorage.setItem('bdvh_adconfig', JSON.stringify(cfg));
+  showToast('Ad সেটিংস সেভ হয়েছে ✅');
+}
+
+function loadAdSettings() {
+  const raw = localStorage.getItem('bdvh_adconfig');
+  if (!raw) return;
+  const cfg = JSON.parse(raw);
+  if(cfg.popunderUrl) document.getElementById('setPopunder').value = cfg.popunderUrl;
+  if(cfg.monetagDirectUrl) document.getElementById('setMonetagDirect').value = cfg.monetagDirectUrl;
+  if(cfg.adsterraDownloadUrl) document.getElementById('setAdsterraDown').value = cfg.adsterraDownloadUrl;
+  if(cfg.popunderScript) document.getElementById('setPopunderScript').value = cfg.popunderScript;
+  if(cfg.socialbarScript) document.getElementById('setAdsterraSocial').value = cfg.socialbarScript;
+}
+
+// ========== EXPORT ==========
+function exportData() {
+  const posts = getPosts();
+  const blob = new Blob([JSON.stringify(posts, null, 2)], {type: 'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'bdvh_posts_backup.json';
+  a.click();
+}
+
+// ========== TOAST ==========
+function showToast(msg, isErr) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast' + (isErr ? ' error' : '') + ' show';
+  setTimeout(() => t.className = 'toast', 2500);
+}
+
+// ========== INIT ==========
+function refreshAll() {
+  refreshDashboard();
+}
+
+if (sessionStorage.getItem('bdvh_auth') === '1') {
+  refreshAll();
+  loadAdSettings();
+}
+
+// Enter key on login
+document.getElementById('loginPass').addEventListener('keydown', e => {
+  if (e.key === 'Enter') doLogin();
+});
+</script>
+</body>
+</html>
